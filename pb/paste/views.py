@@ -37,9 +37,7 @@ def _url(endpoint, **kwargs):
 
 @paste.route('/')
 def index():
-    content = rst(render_template("index.rst"))
-
-    return render_template("generic.html", content=content)
+    return render_template("index.html")
 
 def _auth_namespace(namespace):
     uuid = request.headers.get('X-Namespace-Auth')
@@ -324,3 +322,9 @@ def list_lexers():
 @paste.route('/ls')
 def list_styles():
     return DictResponse(list(get_all_styles()))
+
+@paste.route('/m')
+def man():
+    content = rst(render_template("man.rst"))
+
+    return render_template("generic.html", content=content)

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Arista Pastebin</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+    <link href="/static/css/pbs.css" type="text/css" rel="stylesheet">
+
+    <style>
+    .highlight pre {
+      display: inline-block;
+      text-align: left;
+      background: #101010;
+      color: #cccccc;
+    }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <div class="text-center">
+            <h1 class="page-header"><a href="/" target="_blank">Arista Pastebin</a></h1>
+            <h3>tl;dr</h3>
+            <div class="highlight">
+              <pre><!--
+             --><span>$ alias pb='curl -F c=@- {{ url('.post') | nohttp }}'</span>
+<!--         --><span>$ cmd | pb</span></pre><!--
+         --></div>
+            <p class="lead small">- or -</p>
+            <p>Submit through the form below</p>
+          </div>
+        </div>
+
+        <form id="paste-form" enctype="multipart/form-data" method="POST" action="/">
+          <div class="col-sm-12 form-group">
+            <textarea id="content" name="content" class="form-control paste-content" autofocus="autofocus"></textarea>
+          </div>
+
+          <div class="col-xs-6 col-sm-6 form-inline form-group">
+            <div class="form-group">
+              <button id="paste" type="submit" class="btn btn-primary btn-block" data-method="post">
+                Paste
+              </button>
+            </div>
+          </div>
+
+        </form>
+      </div>
+
+      <footer class="footer">
+        <div class="container">
+          <p class="text-muted text-center small"><a href="/m">RTFM</a> - <a href="http://gitlab.aristanetworks.com/snaipe/pb">Hack it</a> - Forked from <a href="ptpb.pw">ptpb.pw</a></p>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

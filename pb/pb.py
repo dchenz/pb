@@ -9,6 +9,8 @@
     :license: GPLv3, see LICENSE for details.
 """
 
+import re
+
 from flask import Flask, request
 
 from pb.paste.views import paste
@@ -54,6 +56,10 @@ def create_app(config_filename='config.yaml'):
     init_cache(app)
     init_cdn(app)
     init_logging(app)
+
+    @app.template_filter('nohttp')
+    def nohttp_filter(s):
+        return re.sub('/+$', '', re.sub(r'^\w+://', '', s))
 
     app.after_request(cors)
 
