@@ -16,10 +16,17 @@ spec:
         app: pb
         version: v1.0.1
     spec:
+      volumes:
+      - name: data
+        hostPath:
+          path: /var/local/pastebin/
       containers:
       - name: pb
         image: registry.docker.sjc.aristanetworks.com:5000/pb:1.0.1
         imagePullPolicy: Always
         ports:
-          - containerPort: 10002
-            protocol: TCP
+        - containerPort: 10002
+          protocol: TCP
+        volumeMounts:
+        - name: data
+          mountPath: /data/db

@@ -1,8 +1,11 @@
 #!/bin/sh -e
 
 if [ "$1" = "pb" ]; then
-    chown -R mongodb /data/db
-    su -s /bin/sh -c mongod &
+    mongod &
+
+    if [ -d /data/db ]; then
+        python3 /app/runonce.py
+    fi
 
     exec python3 /app/run.py
     exit $?
