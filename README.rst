@@ -5,107 +5,52 @@ pb
 ``pb`` is a lightweight pastebin (and url shortener) built using
 `flask <http://flask.pocoo.org/docs/0.10/quickstart/>`_.
 
-The official instance of ``pb`` can be found at `ptpb.pw
-<https://ptpb.pw>`_. Feel free to deploy ``pb`` elsewhere.
+This project was forked from `ptpb.pw
+<https://ptpb.pw>`_ and is currently live at `http://pb/ <http://pb>`_.
 
-Build Requirements
-------------------
-- npm
-- graphicsmagick
+Building the docker image & running locally
+-------------------------------------------
 
-Runtime Requirements
---------------------
+Run the following in your shell:
 
-- python >= 3.4 `requirements.txt <requirements.txt>`_
-- mongodb >= 2.6
-- varnish >= 4.0 (optional)
-- gunicorn >= 19.1 (optional, or `any other WSGI server <http://wsgi.readthedocs.org/en/latest/servers.html>`_)
+```shell-session
+$ cp config.yaml.example config.yaml
+$ docker build -t pb .
+$ docker run -p 10002:10002 -v/tmp/pb:/data/db -t pb
+```
 
-Deployment
-----------
+Then access http://127.0.0.1:10002 on your browser.
 
-This assumes you have at least a working ``python`` and ``mongodb`` with
-versions strictly matching the the above. Consult your distribution's
-documentation on how to do that.
+Deploying new versions on the infra
+-----------------------------------
 
-Start by `cloning <http://git-scm.com/docs/git-clone>`_ ``pb``:
+First, edit `kube/pb-rc.yaml` and bump the version number of the app & container.
 
-.. code:: console
+Then build, tag & push the container on the infra (setting `pb_version` with the new version number):
 
-    $ git clone https://github.com/silverp1/pb.git --recursive
+```shell-session
+$ pb_version=x.y.z
+$ docker build -t pb:$pb_version .
+$ docker tag pb:$pb_version registry.docker.sjc.aristanetworks.com:5000/pb:$pb_version
+$ docker push registry.docker.sjc.aristanetworks.com:5000/pb:$pb_version
+```
 
-Next, copy ``pb/config.yaml.example`` to ``~/.config/pb/config.yaml``,
-and edit it appropriately. For development, its configuration might
-look something like:
+Finally, update the service & replication controller on the k8s cluster:
 
-.. code:: yaml
+```shell-session
+$ kubectl rolling-update pb -f kube/pb-rc.yaml
+$ kubectl rolling-update pb -f kube/pb-svc.yaml
+```
 
-    DEBUG: true
+If rolling-update doesn't work (it doesn't right now), simply re-create the units:
 
-    MONGO:
-      host: localhost
-      port: 27017
+```shell-session
+$ kubectl delete pb -f kube/pb-rc.yaml
+$ kubectl delete pb -f kube/pb-svc.yaml
+$ kubectl create pb -f kube/pb-svc.yaml
+$ kubectl create pb -f kube/pb-rc.yaml
+```
 
-    MONGO_DATABASE: pb
+Check that everything works at http://pb.staging.kube.sw-infra.sjc.aristanetworks.com/
 
-You'll also need to build ``pbs``, which requires
-``grunt-cli``:
-
-.. code:: console
-
-    # npm install -g grunt-cli
-    $ npm install
-    $ grunt
-
-A ``pb`` development `environment
-<https://virtualenv.pypa.io/en/latest/virtualenv.html#usage>`_ could
-be created with something like:
-
-.. code:: console
-
-    $ pip install virtualenv
-    $ virtualenv pbenv
-    $ source pbenv/bin/activate
-    (pbenv)$ pip install -r pb/requirements.txt
-
-You should use ``runonce.py`` to create indexes before you run ``pb``
-for the first time on a new database:
-
-.. code:: console
-
-    (pbenv)$ cd pb
-    (pbenv)$ ./runonce.py
-
-You can then start a ``pb`` instance via werkzeug's built-in `WSGI
-server <http://werkzeug.pocoo.org/docs/0.9/serving/>`_.
-
-.. code:: console
-
-    (pbenv)$ ./run.py
-
-Packaging
----------
-
-**Arch Linux**
-
-``pb-git`` is available in the `AUR
-<https://aur.archlinux.org/packages/pb-git>`_. This package provides
-``pb.service`` which starts a uwsgi server on port ``8080`` by
-default.
-
-For now this requires ``aur/python-flask-git``, until 1.0 is released
-upstream:
-
-.. code:: console
-
-    $ cower -dd pb-git
-    $ (cd python-flask-git && makepkg -si)
-    $ (cd pb-git && makepkg -si)
-
-Next, start ``pb`` with:
-
-.. code:: console
-
-    # systemctl start pb
-
-You can play with pb's uwsgi configuration in ``/etc/uwsgi/pb.ini``.
+If you're feeling that everything is OK, re-run the `kubectl` commands with `--namespace=production`. The app is now up and rolling!
