@@ -1,13 +1,7 @@
 #!/bin/sh -e
 
 if [ "$1" = "pb" ]; then
-    mongod &
-
-    if [ -d /data/db ]; then
-        python3 /app/runonce.py
-    fi
-
-    exec python3 /app/run.py
+    exec python3 /app/entry.py
     exit $?
 fi
 

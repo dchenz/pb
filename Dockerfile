@@ -40,6 +40,7 @@ RUN pip3 install -r requirements.txt
 
 COPY config.yaml /root/.config/pb/
 COPY run.sh /root/run.sh
+COPY entry.py /root/entry.py
 ADD . /app
 
 VOLUME /data/db
