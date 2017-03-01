@@ -8,6 +8,141 @@
 
     <link href="/static/css/pbs.css" type="text/css" rel="stylesheet">
 
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" type="text/css" rel="stylesheet">
+    <link href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/css/bootstrap-datetimepicker.min.css" type="text/css" rel="stylesheet">
+
+    <script src="//code.jquery.com/jquery-1.12.0.min.js"></script>
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.11.1/moment.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/js/bootstrap-datetimepicker.min.js"></script>
+
+    <script id="index-script" src="/static/js/index.js"></script>
+    <script>
+    $(function() {
+
+      var api = API('{{ url('.post') }}');
+      var app = WWW();
+
+      function paste_submit(event) {
+        var e = $(event.target),
+        fd = app.paste_data(),
+        fn = api.paste[e.data('method')];
+
+        return fn(fd, e.uri()).done(function(data) {
+          app.set_uuid(data);
+        });
+      }
+
+      function try_json(xhr) {
+        if (xhr.responseJSON !== undefined)
+          return xhr.responseJSON;
+        try {
+          return $.parseJSON(xhr.responseText);
+        } catch(err) {
+          return {}
+        }
+      }
+
+      var _xhr = $.ajaxSettings.xhr;
+      $.ajaxSettings.xhr = function() {
+        var res = _xhr();
+        res.upload.addEventListener('progress', function(event) {
+          $('.progress-bar').width(event.loaded / event.total * 100 + "%");
+        });
+        return res;
+      }
+
+      $.fn.extend({
+        click: function(fn) {
+          if (arguments.length == 0)
+            return $(this).trigger('click');
+          $(this).on('click', function(event) {
+            event.preventDefault();
+            fn(event);
+            event.target.blur();
+          });
+        },
+        sclick: function(fn) {
+          $(this).click(function(event) {
+            var spinner = $(event.target).find('.fa-spinner'),
+            progress = $('.progress');
+            spinner.removeClass('hidden');
+            progress.removeClass('hidden');
+
+            fn(event).always(function() {
+              spinner.addClass('hidden');
+              progress.addClass('hidden');
+              $('.progress-bar').width('0%');
+            }).done(function(data) {
+              app.api_status(data);
+            }).fail(function(xhr, status, error) {
+              var s = try_json(xhr);
+              console.log(xhr);
+              s[status] = error;
+              app.api_status(s);
+            });
+          });
+        },
+        uri: function(value) {
+          uri = $(this).data('uri');
+          if (uri !== undefined) {
+            if (arguments.length != 0)
+              return $(uri).val(value);
+            return $(uri).val();
+          }
+        }
+      });
+
+      $('#clear').click(function(event) {
+        app.clear();
+        $("#content").focus();
+      });
+
+      $('#file-input').change(function(event) {
+        app.select_file();
+      });
+
+      $('#file').click(function(event) {
+        $('#file-input').click();
+      });
+
+      $('#shorturl').sclick(function(event) {
+        var fd = app.url_data();
+
+        return api.url.post(fd);
+      });
+
+      $('#paste').sclick(paste_submit);
+      $('#update').sclick(paste_submit);
+
+      $('#delete').sclick(function(event) {
+        var e = $(event.target)
+          return api.paste.delete(e.uri()).done(function(data) {
+            e.uri('');
+          });
+      });
+
+      $('#load').sclick(function(event) {
+        var e = $(event.target)
+          return api.paste.get(e.uri()).done(function(data, status, xhr) {
+            app.set_content(data, xhr);
+          });
+      });
+
+      $('#paste-form').submit(function(event) {
+        event.preventDefault();
+      });
+
+      $('#swap').click(app.swap_sunset);
+
+      app.init();
+
+      // refresh on firefox doesn't clear form values, but does clear
+      // element state; whut
+      app.clear();
+    });
+    </script>
+
     <style>
     .highlight pre {
       display: inline-block;
@@ -15,9 +150,28 @@
       background: #101010;
       color: #cccccc;
     }
+
+    input[type=checkbox]:checked ~ label {
+      color: #333;
+      background-color: #E6E6E6;
+      border-color: #ADADAD;
+    }
     </style>
   </head>
   <body>
+    <div id="stash" class="hidden" aria-hidden="true">
+      <div class="alert alert-info fade in" role="alert">
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&#215;</span></button>
+      </div>
+    </div>
+
+    <div class="navbar-fixed-top">
+      <div class="progress hidden">
+        <div class="progress-bar progress-bar-info" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+        </div>
+      </div>
+    </div>
+
     <div class="container">
       <div class="row">
         <div class="col-md-12">
@@ -35,15 +189,94 @@
         </div>
 
         <form id="paste-form" enctype="multipart/form-data" method="POST" action="/">
+          <div id="alert-col" class="col-sm-12"></div>
           <div class="col-sm-12 form-group">
             <textarea id="content" name="content" class="form-control paste-content" autofocus="autofocus"></textarea>
+            <div id="filename" class="hidden well text-center"><h4></h4></div>
           </div>
 
           <div class="col-xs-6 col-sm-6 form-inline form-group">
             <div class="form-group">
               <button id="paste" type="submit" class="btn btn-primary btn-block" data-method="post">
                 Paste
+                <span class="fa fa-spin fa-spinner hidden"></span>
               </button>
+            </div>
+            <div class="form-group">
+              <input type="file" id="file-input" class="sr-only">
+              <button id="file" type="submit" class="btn btn-default btn-block" disabled="disabled">
+                Upload File
+                <span class="fa fa-spin fa-spinner hidden"></span>
+              </button>
+            </div>
+            <div class="form-group">
+              <button id="shorturl" type="submit" class="btn btn-default btn-block" formaction="/u">
+                Short URL
+                <span class="fa fa-spin fa-spinner hidden"></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="col-xs-6 col-sm-6 form-inline form-group text-right">
+            <div class="form-group">
+              <div class="btn-group btn-block">
+                <input id="private" name="private" class="api-input hidden" type="checkbox" value="1">
+                <label for="private" class="btn btn-default btn-block">Private</label>
+              </div>
+            </div>
+            <div class="form-group">
+              <button id="clear" type="reset" class="btn btn-default btn-block">Clear</button>
+            </div>
+          </div>
+
+          <div class="col-xs-6 col-sm-6 col-sm-push-6 form-group">
+            <div class="form-group">
+              <label for="sunset" class="sr-only">Expires</label>
+              <div class="input-group" id="sunset">
+                <input type="text" class="form-control api-input" id="datetime" name="sunset" placeholder="Expires">
+                <input type="text" class="form-control api-input hidden ignore-disable" name="sunset" placeholder="Expires (seconds)" disabled="disabled">
+                <span id="swap" class="input-group-addon">
+                  <span class="fa fa-calendar"></span>
+                  <span class="fa fa-clock-o hidden"></span>
+                </span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="label" class="sr-only">Label</label>
+              <input type="text" id="label" class="form-control" placeholder="Label" disabled="disabled">
+            </div>
+          </div>
+
+          <div class="col-xs-12 col-sm-6 col-sm-pull-6 form-inline form-group">
+            <div class="form-group">
+              <div class="input-group">
+                <input id="pasteid" class="form-control" placeholder="paste ID" disabled="disabled">
+                <div class="input-group-btn">
+                  <button id="load" type="submit" class="btn btn-default" data-uri="#pasteid" disabled="disabled">Load
+                    <span class="fa fa-spin fa-spinner hidden"></span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-xs-12 col-sm-6 col-sm-pull-6 form-inline form-group">
+            <div class="form-group">
+              <div class="input-group">
+                <input id="uuid" class="form-control" placeholder="paste UUID" disabled="disabled">
+                <div class="input-group-btn">
+                  <button id="update" type="submit" class="btn btn-default" data-uri="#uuid" data-method="put" disabled="disabled">
+                    Update
+                    <span class="fa fa-spin fa-spinner hidden"></span>
+                  </button>
+                </div>
+                <div class="input-group-btn">
+                  <button id="delete" type="submit" class="btn btn-default" data-uri="#uuid" data-method="delete" disabled="disabled">
+                    Delete
+                    <span class="fa fa-spin fa-spinner hidden"></span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 

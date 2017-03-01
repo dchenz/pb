@@ -258,7 +258,9 @@ def get(sid=None, sha1=None, label=None, namespace=None, lexer=None, handler=Non
         mimetype = paste.get('mimetype', 'text/plain')
 
     if lexer != None:
-        return highlight(content, lexer, formatter)
+        content, code, mimetype = highlight(content, lexer, formatter)
+        if code != 200:
+            return content, code
     if handler != None:
         return _handler.get(handler, content, mimetype, path=path)
 

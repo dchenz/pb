@@ -8,4 +8,5 @@ pyxdg>=0.25
 pymongo>=3.0
 Markdown>=2.6.1
 python-dateutil>=2.4.2
+python-magic>=0.4.12
 pytz>=2015.6

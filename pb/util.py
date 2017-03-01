@@ -26,6 +26,9 @@ from werkzeug.wrappers import get_host
 
 from docutils import core
 from markdown import markdown as _markdown
+from magic import Magic
+
+mime = Magic(mime=True)
 
 def style_args():
     return {k:request.args.get(k) for k in ['style','css']}
@@ -49,11 +52,11 @@ def highlight(content, lexer_name, formatter):
         content = _highlight(content, lexer, formatter)
 
     if not isinstance(formatter, HtmlFormatter):
-        return content
+        return content, 200, mime.from_buffer(content)
 
     template = render_template("generic.html", cc='container-fluid', content=content, **style_args())
 
-    return template
+    return template, 200, 'text/html'
 
 def _content_type():
     content_type = http.parse_options_header(request.headers.get('Content-Type', ''))
