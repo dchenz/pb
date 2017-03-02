@@ -35,17 +35,19 @@ pb() {
         if [ -n "$eqopt" ]; then
             opt="$eqopt"
             arg="$(echo "$arg" | cut -d= -f1)"
+            doshift="i=$i"
         else
             eval "opt=\${$((i+1))}"
+            doshift="i=$((i+1))"
         fi
         unset eqopt
         case "$arg" in
             -h|--help) pb_usage; exit 0;;
             -q|--quiet) quiet=1;;
             -c|--clip) clip=1;;
-            -e|--expires) expires="$opt"; i=$((i+1));;
-            -l|--label) post_path="$post_path~$opt"; i=$((i+1));;
-            --host) pb_base="$opt"; i=$((i+1));;
+            -e|--expires) expires="$opt"; eval "$doshift";;
+            -l|--label) post_path="$post_path~$opt"; eval "$doshift";;
+            --host) pb_base="$opt"; eval "$doshift";;
             --) i=$((i+1)); break;;
             -) plain="$plain '$arg'";;
             -*) >&2 echo "pb: Unsupported option '$arg'."; pb_usage; exit 3;;
