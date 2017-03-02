@@ -34,6 +34,7 @@ RUN npm install
 # I can't believe I have to do that >:(
 RUN cd node_modules/pbs && npm install
 RUN grunt
+RUN cp -rf node_modules/pbs/dist/css pb/static
 
 COPY requirements.txt /app/
 RUN pip3 install -r requirements.txt
@@ -48,7 +49,7 @@ VOLUME /data/db
 # clean up
 RUN npm uninstall -g grunt-cli && npm prune
 RUN apk del git graphicsmagick nodejs
-RUN rm -rf /root/vera.tar.bz2
+RUN rm -rf /root/vera.tar.bz2 node_modules
 
 EXPOSE 10002
 
