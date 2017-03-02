@@ -1,11 +1,19 @@
-#!/bin/sh -ex
+#!/bin/sh -e
 
-# Upload input to http://pb
+# ------------------------------------------------
+# Installing:
+# 1. download this file
+# 2. source the file in your shell rc:
+#   $ echo "source /path/to/pb.sh" >> ~/.shell_rc
+# 3. reload your shell rc:
+#   $ source ~/.shell_rc
+# ------------------------------------------------
+
+# Upload input to {{ url('.post') }}
 #
 # usage: pb [-h|--help] [-c|--clip] [-e|--expires <date>] [-l|--label <label>] [<file>...]
 #
 pb() {
-    set +x
     pb_usage() {
         # this needs to be tab-indented.
         >&2 cat <<-EOF
@@ -14,7 +22,7 @@ pb() {
         echo usage
     }
 
-    local pb_base="pb"
+    local pb_base="{{ url('.post') | nohttp }}"
     local post_path="/"
 
     # options

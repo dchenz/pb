@@ -330,3 +330,7 @@ def man():
     content = rst(render_template("man.rst"))
 
     return render_template("generic.html", content=content)
+
+@paste.route('/sh')
+def shell_func():
+    return BaseResponse(render_template("pb.sh"), mimetype="text/plain")
