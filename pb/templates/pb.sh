@@ -65,7 +65,13 @@ pb() {
 
     local curlopts redir='>/dev/null'
     if [ -n "$expires" ]; then
-        seconds="$(($(date -d "$expires" +%s) - $(date +%s)))"
+        local sunset ret
+        sunset="$(date -d "$expires" +%s)"
+        ret="$?"
+        if [ $ret -ne 0 ]; then
+            exit $ret
+        fi
+        seconds="$(($sunset - $(date +%s)))"
         if [ "$seconds" -le 0 ]; then
             >&2 echo "pb: The expiration date is set in the past, and no time machine is currently available."
             exit 1
@@ -78,7 +84,7 @@ pb() {
             >&2 echo "pb: Can't copy url to clipboard -- DISPLAY is not defined. If you're using ssh, have you enabled X11 forwarding?"
             exit 1
         fi
-        if command -v xclip >/dev/null; then
+        if ! command -v xclip >/dev/null; then
             >&2 echo "pb: Can't copy url to clipboard -- xclip is not installed."
             exit 1
         fi
