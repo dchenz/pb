@@ -3,22 +3,22 @@ kind: ReplicationController
 metadata:
   labels:
     app: pb
-    version: v1.0.3
+    version: v1.0.4
   name: pb
 spec:
   replicas: 1
   selector:
     app: pb
-    version: v1.0.3
+    version: v1.0.4
   template:
     metadata:
       labels:
         app: pb
-        version: v1.0.3
+        version: v1.0.4
     spec:
       containers:
       - name: pb
-        image: registry.docker.sjc.aristanetworks.com:5000/pb:1.0.3
+        image: registry.docker.sjc.aristanetworks.com:5000/pb:1.0.4
         imagePullPolicy: Always
         ports:
         - containerPort: 10002
