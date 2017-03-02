@@ -26,7 +26,7 @@ pb() {
     local post_path="/"
 
     # options
-    local clip=0 expires quiet
+    local clip=0 expires quiet=0
 
     local i=1 plain arg opt
     while [ $i -le $# ]; do
