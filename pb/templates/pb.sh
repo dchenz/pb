@@ -31,7 +31,14 @@ pb() {
     local i=1 plain arg opt
     while [ $i -le $# ]; do
         eval "arg=\${$i}"
-        eval "opt=\${$((i+1))}"
+        local eqopt="$(echo "$arg" | cut -d= -f2-)"
+        if [ -n "$eqopt" ]; then
+            opt="$eqopt"
+            arg="$(echo "$arg" | cut -d= -f1)"
+        else
+            eval "opt=\${$((i+1))}"
+        fi
+        unset eqopt
         case "$arg" in
             -h|--help) pb_usage; exit 0;;
             -q|--quiet) quiet=1;;
