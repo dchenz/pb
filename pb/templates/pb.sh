@@ -42,7 +42,7 @@ pb() {
         fi
         unset eqopt
         case "$arg" in
-            -h|--help) pb_usage; exit 0;;
+            -h|--help) pb_usage; return 0;;
             -p|--private) private=1;;
             -q|--quiet) quiet=1;;
             -c|--clip) clip=1;;
@@ -52,7 +52,7 @@ pb() {
             --host) pb_base="$opt"; eval "$doshift";;
             --) i=$((i+1)); break;;
             -) plain="$plain '$arg'";;
-            -*) >&2 echo "pb: Unsupported option '$arg'."; pb_usage; exit 3;;
+            -*) >&2 echo "pb: Unsupported option '$arg'."; pb_usage; return 3;;
             *) plain="$plain '$arg'";;
         esac
         i=$((i+1))
@@ -71,12 +71,12 @@ pb() {
         sunset="$(date -d "$expires" +%s)"
         ret="$?"
         if [ $ret -ne 0 ]; then
-            exit $ret
+            return $ret
         fi
         seconds="$(($sunset - $(date +%s)))"
         if [ "$seconds" -le 0 ]; then
             >&2 echo "pb: The expiration date is set in the past, and no time machine is currently available."
-            exit 1
+            return 1
         fi
         curlopts="${curlopts} -F 'sunset=$seconds'"
     fi
@@ -85,11 +85,11 @@ pb() {
     if [ "$clip" -eq 1 ]; then
         if [ -z "$DISPLAY" ]; then
             >&2 echo "pb: Can't copy url to clipboard -- DISPLAY is not defined. If you're using ssh, have you enabled X11 forwarding?"
-            exit 1
+            return 1
         fi
         if ! command -v xclip >/dev/null; then
             >&2 echo "pb: Can't copy url to clipboard -- xclip is not installed."
-            exit 1
+            return 1
         fi
 
         if [ "$quiet" -eq 1 ]; then
