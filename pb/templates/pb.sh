@@ -80,6 +80,7 @@ pb() {
         curlopts="${curlopts} -F 'sunset=$seconds'"
     fi
 
+    local delim
     if [ "$clip" -eq 1 ]; then
         if [ -z "$DISPLAY" ]; then
             >&2 echo "pb: Can't copy url to clipboard -- DISPLAY is not defined. If you're using ssh, have you enabled X11 forwarding?"
@@ -91,19 +92,21 @@ pb() {
         fi
 
         if [ "$quiet" -eq 1 ]; then
-            redir='2>/dev/null | xclip -sel clip'
+            redir='2>/dev/null | tee /dev/stderr | xclip -sel clip'
+            delim='\n'
         else
             redir='| xclip -sel clip'
         fi
     elif [ "$quiet" -eq 1 ]; then
-        redir='2>/dev/null; echo '
+        redir='>&2 2>/dev/null'
+        delim='\n'
     fi
 
     if [ "$private" -eq 1 ]; then
         curlopts="${curlopts} -F p=1"
     fi
 
-    curlcmd='curl -sS '"${curlopts}"' -F "c=@${input}" -w "%{redirect_url}" "'"$pb_base$post_path"'?r=1" -o /dev/stderr '"$redir"
+    curlcmd='curl -sS '"${curlopts}"' -F "c=@${input}" -w "%{redirect_url}'"$delim"'" "'"$pb_base$post_path"'?r=1" -o /dev/stderr '"$redir"
 
     local f
     for f; do
