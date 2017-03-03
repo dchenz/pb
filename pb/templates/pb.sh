@@ -46,6 +46,7 @@ pb() {
             -p|--private) private=1;;
             -q|--quiet) quiet=1;;
             -c|--clip) clip=1;;
+            -u|--url) post_path='/u';;
             -e|--expires) expires="$opt"; eval "$doshift";;
             -l|--label) post_path="$post_path~$opt"; eval "$doshift";;
             --host) pb_base="$opt"; eval "$doshift";;
