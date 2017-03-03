@@ -1,0 +1,287 @@
+pb(1)
+=====
+
+NAME
+----
+pb - create a paste from any input at http://pb/
+
+
+SYNOPSIS
+--------
+
+_pb_ [<options>] [<file>...]
+
+DESCRIPTION
+-----------
+
+pb is a pastebin service hosted on the Arista Software Infrastructure, originally forked from http://ptpb.pw.
+
+OPTIONS
+-------
+
+-q::
+--quiet::
+
+    Quiet, only print the paste URL.
+
+-e::
+--expires <date>::
+
+    Make the paste expire at the given <date>. The <date> parameter is passed verbatim to **date**(1).
+
+-p::
+--private::
+
+    Make the paste "private" by only generating a long identifier.
+
+-l::
+--label <name>::
+
+    Create the paste with a vanity name, at _<host>/~<name>_.
+
+--host <hostname>::
+
+    Send paste data to <hostname>, instead of http://pb/.
+
+TERMINOLOGY
+-----------
+
+sunset
+~~~~~~
+
+time in seconds that the paste should persist before being
+automatically deleted
+
+shortid
+~~~~~~~
+
+base64-encoded last 3 bytes of sha1 digest
+
+longid
+~~~~~~
+
+base64-encoded sha1 digest, left-zero-padded to 21 bytes
+
+id
+~~
+
+One of:
+
+- a {short,long}id
+- a {short,long}id, followed by a period-delimiter and a mimetype
+  extension
+- a 40 character sha1 hexdigest
+- a 40 character sha1 hexdigest, followed by a period-delimiter and a
+  mimetype extension
+- a 'vanity' label
+- a 'vanity' label, followed by a period-delimiter and a mimetype
+  extension
+
+A mimetype extension, when specified, is first matched with a matching
+mimetype known to the system, then returned in the HTTP response
+headers.
+
+vanity
+~~~~~~
+
+The character '~' followed by any number of unicode characters,
+excluding '/' and '.'
+
+lexer
+~~~~~
+
+A 'lexer' is an alias of a pygments lexer; used for syntax
+highlighting.
+
+uuid
+~~~~
+
+The string representation of a RFC 4122 UUID. These are used as a weak
+form of 'shared secret' that, if known, allow the user to modify the
+pastes.
+
+handler
+~~~~~~~
+
+A one-character handler identifier.
+
+
+API
+---
+
+Data Format
+~~~~~~~~~~~
+
+In addition to _multipart/form-data_ and _application/x-www-form-urlencoded_, paste data can be provided in the following alternative formats:
+
+* json
++
+If Content-Type: application/json is present, pb will json-decode the entire request body. The c and filename keys are then evaluated if present.
+
+Where complex data structures are present in responses, the default output format is yaml. Alternative output formats are also supported:
+
+* json
++
+If Accept: application/json is present, pb will provide a json representation of the complex response in the response body.
+
+DELETE /<uuid>
+~~~~~~~~~~~~~~
+
+Deletes the paste that matches the provided UUID.
+
+GET /man.1
+~~~~~~~~~~
+
+Get this manpage.
+
+GET /sh
+~~~~~~~
+
+Get the pb.sh script.
+
+GET /l
+~~~~~~
+
+Get a list of available lexers, newline-delimited, with space-delimited aliases.
+
+GET /ls
+~~~~~~~
+
+Get a list of available styles, newline-delimited.
+
+GET /lf
+~~~~~~~
+
+Get a list of available formatters, newline-delimited, with space-delimited aliases.
+
+GET /s
+~~~~~~
+
+Get paste statistics; currently paste count and total size.
+
+GET /<id>
+~~~~~~~~~
+
+Retrieves paste or url redirect.
+If a paste: returns the matching paste, verbatim and unmolested.
+If a url redirect: returns HTTP code 301 with the location of the redirect.
+
+GET /<id>/lexer
+~~~~~~~~~~~~~~~
+
+Like the above, but decodes and applies syntax highlighting to pastes via HTML/CSS.
+Line numbering and fragments are included, and can be used to link to individual lines within the paste.
+
+GET /<id>/<lexer>/<formatter>
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Like the above, but uses the specified 'formatter' (a special case of 'html' is used when not specified).
+
+GET /<handler>/<id>
+~~~~~~~~~~~~~~~~~~~
+
+Like the above, but paste content is mangled by said handler before being returned.
+
+POST /
+~~~~~~
+
+Creates a new paste; returns GET URL and secret UUID.
+
+Only multipart/form-data is supported; other content types are not tested.
+
+At least one 'name' disposition extension parameter must be present, and its value must be 'c'.
+
+Unless the 'filename' disposition extension parameter is specified, the form data is decoded. The value of the 'filename' parameter is split by period-delimited extension, and appended to the location in the response.
+
+Form Parameters:
+====
+
+c (mandatory)::
+
+Content of the paste.
+
+p (optional)::
+
+If the value of this field evaluates to true, the paste will be a private paste where the paste can only be retrieved by knowledge of its sha1 hexdigest.
+
+s::
+sunset (optional)::
+
+The paste will be deleted after the given amount of time has passed.
+The value of this field must be a positive integer and represents the number of seconds (after having been pasted) that the paste should survive before being automatically deleted.
+
+====
+
+POST /<handler>
+~~~~~~~~~~~~~~~
+
+Run the request body through the handler and return the mangled output in the response body.
+
+POST /<vanity>
+~~~~~~~~~~~~~~
+
+Same as *POST /*, except the paste is a 'vanity' paste, where the GET URL path is identical to the POST path.
+
+POST /u
+~~~~~~~
+
+Creates a new url redirect (short url).
+
+The form content will be decoded, and truncated at the first newline or EOF, whichever comes first. The result of that is then returned in a HTTP 301 response with the form content in the Location header.
+
+PUT /<uuid>
+~~~~~~~~~~~
+
+Replaces the content of the paste that matches the provided UUID.
+
+Form submission is otherwise identical to POST.
+
+EXAMPLES
+--------
+
+.Creating a paste from the output of *dmesg*(1)
+====
+....
+$ dmesg | pb
+long: AGhkV6JANmmQRVssSUzFWa_0VNyq
+sha1: 686457a240366990455b2c494cc559aff454dcaa
+short: riqS
+url: http://pb/riqS
+uuid: 17c5829d-81a0-4eb6-8681-ba72f83ffbf3
+....
+
+or, if you only care about getting the URL back:
+
+....
+$ dmesg | pb -q
+http://pb/riqS
+....
+====
+
+.Creating a paste from a file's content, and copy the URL to the clipboard:
+====
+....
+$ pb file.txt --clip
+long: AGhkV6JANmmQRVssSUzFWa_0VNyq
+sha1: 686457a240366990455b2c494cc559aff454dcaa
+short: riqS
+url: http://pb/riqS
+uuid: 17c5829d-81a0-4eb6-8681-ba72f83ffbf3
+....
+====
+
+.Create a paste with a 1 minute sunset:
+====
+....
+$ pb file1.txt -e '1 minute'
+date: 2017-03-03T15:37:02.096331+00:00
+digest: 371798e194c2298fa31689872554c0181d745c25
+long: ADcXmOGUwimPoxaJhyVUwBgddFwl
+short: riqS
+size: 33
+status: created
+sunset: 2017-03-03T15:38:02.094757+00:00
+url: http://pb/riqS
+uuid: 8b25b47c-ad8d-4d3c-b09b-3175b575faa2
+....
+====

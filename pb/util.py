@@ -9,6 +9,8 @@
     :license: GPLv3, see LICENSE for details.
 """
 
+import subprocess
+
 from io import BytesIO
 from datetime import datetime, timedelta
 from dateutil.parser import parse as datetime_parse
@@ -94,6 +96,17 @@ def rst(source):
     overrides = {'syntax_highlight': 'short'}
     parts = core.publish_parts(source, writer_name='html', settings_overrides=overrides)
     return parts['html_body']
+
+def asciidoc(src, backend='manpage'):
+    adoc = subprocess.Popen(['/usr/bin/asciidoctor',
+                             '-amanmanual=Arista Pastebin',
+                             '-d', 'manpage',
+                             '-b', backend,
+                             '-o', '-',
+                             '-'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    content = adoc.communicate(input=src.encode())[0]
+    adoc.wait()
+    return content
 
 def markdown(source):
     md = _markdown(source.decode('utf-8'), extensions=[

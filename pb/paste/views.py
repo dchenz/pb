@@ -25,7 +25,7 @@ from pymongo import errors
 
 from pb.namespace import model as ns_model
 from pb.paste import model, handler as _handler
-from pb.util import highlight, request_content, request_keys, rst, markdown, absolute_url, get_host_name, parse_sunset
+from pb.util import highlight, request_content, request_keys, rst, markdown, absolute_url, get_host_name, parse_sunset, asciidoc
 from pb.cache import invalidate
 from pb.responses import BaseResponse, StatusResponse, PasteResponse, DictResponse, redirect
 
@@ -325,11 +325,13 @@ def list_lexers():
 def list_styles():
     return DictResponse(list(get_all_styles()))
 
-@paste.route('/m')
-def man():
-    content = rst(render_template("man.rst"))
+@paste.route('/man')
+def manpage_html():
+    return asciidoc(render_template("pb.txt"), backend='html5')
 
-    return render_template("generic.html", content=content)
+@paste.route('/man.1')
+def manpage_docbook():
+    return BaseResponse(asciidoc(render_template("pb.txt")), mimetype="text/plain")
 
 @paste.route('/sh')
 def shell_func():

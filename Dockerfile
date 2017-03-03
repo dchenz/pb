@@ -6,6 +6,7 @@ ADD http://ftp.gnome.org/pub/GNOME/sources/ttf-bitstream-vera/1.10/ttf-bitstream
 
 RUN echo http://dl-4.alpinelinux.org/alpine/edge/testing >> /etc/apk/repositories
 RUN apk add --no-cache \
+    asciidoctor \
     libpng-dev \
     libmagic \
     fontconfig \

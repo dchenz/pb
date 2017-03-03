@@ -14,14 +14,6 @@
 # usage: pb [-h|--help] [-c|--clip] [-e|--expires <date>] [-l|--label <label>] [<file>...]
 #
 pb() {
-    pb_usage() {
-        # this needs to be tab-indented.
-        >&2 cat <<-EOF
-		usage: pb [-h|--help] [-q|--quiet] [-c|--clip] [-e|--expires <date>] [-l|--label <label>] [<file>...]
-		EOF
-        echo usage
-    }
-
     local pb_base="{{ url('.post') | nohttp }}"
     local post_path="/"
 
@@ -42,7 +34,7 @@ pb() {
         fi
         unset eqopt
         case "$arg" in
-            -h|--help) pb_usage; return 0;;
+            -h|--help) pb_man; return 0;;
             -p|--private) private=1;;
             -q|--quiet) quiet=1;;
             -c|--clip) clip=1;;
@@ -52,7 +44,7 @@ pb() {
             --host) pb_base="$opt"; eval "$doshift";;
             --) i=$((i+1)); break;;
             -) plain="$plain '$arg'";;
-            -*) >&2 echo "pb: Unsupported option '$arg'."; pb_usage; return 3;;
+            -*) >&2 echo "pb: Unsupported option '$arg'."; return 3;;
             *) plain="$plain '$arg'";;
         esac
         i=$((i+1))
@@ -114,4 +106,8 @@ pb() {
         local input="${f:--}"
         eval "$curlcmd"
     done
+}
+
+pb_man() {
+    curl -s pb/man.1 | man -l -
 }
