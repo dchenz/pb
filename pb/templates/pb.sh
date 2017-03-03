@@ -26,7 +26,7 @@ pb() {
     local post_path="/"
 
     # options
-    local clip=0 expires quiet=0
+    local clip=0 expires quiet=0 private=0
 
     local i=1 plain arg opt
     while [ $i -le $# ]; do
@@ -43,6 +43,7 @@ pb() {
         unset eqopt
         case "$arg" in
             -h|--help) pb_usage; exit 0;;
+            -p|--private) private=1;;
             -q|--quiet) quiet=1;;
             -c|--clip) clip=1;;
             -e|--expires) expires="$opt"; eval "$doshift";;
@@ -96,6 +97,10 @@ pb() {
         fi
     elif [ "$quiet" -eq 1 ]; then
         redir='2>/dev/null; echo '
+    fi
+
+    if [ "$private" -eq 1 ]; then
+        curlopts="${curlopts} -F p=1"
     fi
 
     curlcmd='curl -sS '"${curlopts}"' -F "c=@${input}" -w "%{redirect_url}" "'"$pb_base$post_path"'?r=1" -o /dev/stderr '"$redir"
