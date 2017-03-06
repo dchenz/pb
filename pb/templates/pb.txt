@@ -16,6 +16,9 @@ DESCRIPTION
 
 pb is a pastebin service hosted on the Arista Software Infrastructure, originally forked from http://ptpb.pw.
 
+All files provided to the command as parameters will be fed to the service, and an unique
+url will be produced for each. The special file '-' can be used to signify stdin.
+
 OPTIONS
 -------
 
