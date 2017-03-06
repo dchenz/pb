@@ -1,7 +1,7 @@
 #!/bin/sh -e
 
 if [ "$1" = "pb" ]; then
-    exec python3 /app/entry.py
+    exec python3 /app/run.py
     exit $?
 fi
 

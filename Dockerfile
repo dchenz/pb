@@ -12,7 +12,6 @@ RUN apk add --no-cache \
     fontconfig \
     git \
     graphicsmagick \
-    mongodb \
     nodejs \
     py3-pillow \
     python3
@@ -20,8 +19,6 @@ RUN apk add --no-cache \
 RUN mkdir -p /usr/share/fonts
 RUN tar -C /usr/share/fonts/ -xvjf /root/vera.tar.bz2 $(tar -tjf /root/vera.tar.bz2 | grep '.ttf')
 RUN fc-cache -s -f
-
-RUN rm /usr/bin/mongosniff /usr/bin/mongoperf
 
 RUN pip3 install virtualenv
 RUN npm install -g grunt-cli
@@ -42,7 +39,6 @@ RUN pip3 install -r requirements.txt
 
 COPY config.yaml /root/.config/pb/
 COPY run.sh /root/run.sh
-COPY entry.py /root/entry.py
 ADD . /app
 
 VOLUME /data/db
