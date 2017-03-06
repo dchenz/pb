@@ -34,7 +34,7 @@ pb() {
         fi
         unset eqopt
         case "$arg" in
-            -h|--help) pb_man; return 0;;
+            -h|--help) curl -s pb/man.1 | man -l -; return 0;;
             -p|--private) private=1;;
             -q|--quiet) quiet=1;;
             -c|--clip) clip=1;;
@@ -106,8 +106,4 @@ pb() {
         local input="${f:--}"
         eval "$curlcmd"
     done
-}
-
-pb_man() {
-    curl -s pb/man.1 | man -l -
 }

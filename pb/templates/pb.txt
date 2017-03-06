@@ -9,7 +9,7 @@ pb - create a paste from any input at http://pb/
 SYNOPSIS
 --------
 
-_pb_ [<options>] [<file>...]
+_pb_ [<options>] [--] [<file>...]
 
 DESCRIPTION
 -----------
@@ -38,6 +38,17 @@ OPTIONS
 --label <name>::
 
     Create the paste with a vanity name, at _<host>/~<name>_.
+
+-c::
+--clip::
+
+    Copy the paste URL to the system clipboard.
+
+-u::
+--url::
+
+    Url-shortening mode. All files will be expected to contain an URL,
+    and the produced pastes will automatically redirect to it.
 
 --host <hostname>::
 
