@@ -1,10 +1,9 @@
-FROM alpine:edge
+FROM alpine:3.6
 
 MAINTAINER snaipe@arista.com
 
 ADD http://ftp.gnome.org/pub/GNOME/sources/ttf-bitstream-vera/1.10/ttf-bitstream-vera-1.10.tar.bz2 /root/vera.tar.bz2
 
-RUN echo http://dl-4.alpinelinux.org/alpine/edge/testing >> /etc/apk/repositories
 RUN apk add --no-cache \
     asciidoctor \
     libpng-dev \
@@ -13,6 +12,7 @@ RUN apk add --no-cache \
     git \
     graphicsmagick \
     nodejs \
+    nodejs-npm \
     py3-pillow \
     python3
 
@@ -34,8 +34,8 @@ RUN cd node_modules/pbs && npm install
 RUN grunt
 RUN cp -rf node_modules/pbs/dist/css pb/static
 
-COPY requirements.txt /app/
-RUN pip3 install -r requirements.txt
+COPY requirements.txt.lock /app/
+RUN pip3 install -r requirements.txt.lock
 
 COPY config.yaml /root/.config/pb/
 COPY run.sh /root/run.sh
@@ -45,7 +45,7 @@ VOLUME /data/db
 
 # clean up
 RUN npm uninstall -g grunt-cli && npm prune
-RUN apk del git graphicsmagick nodejs
+RUN apk del git graphicsmagick nodejs nodejs-npm
 RUN rm -rf /root/vera.tar.bz2 node_modules
 
 EXPOSE 10002

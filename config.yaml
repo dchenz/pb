@@ -1,7 +1,7 @@
 #DEBUG: true
 
 MONGO:
-  host: 'mongodb://mongodb1.production:27017,mongodb2.production:27017'
+  host: 'mongodb://mongo-0.mongo,mongo-1.mongo'
   replicaSet: rs0
 
 MONGO_DATABASE: pb
