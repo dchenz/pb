@@ -35,7 +35,7 @@ spec:
     spec:
       containers:
       - name: pb
-        image: registry.docker.sjc.aristanetworks.com:5000/pb:1.0.5
+        image: docker.corp.arista.io/pb:1.0.6
         imagePullPolicy: Always
         ports:
         - containerPort: 10002
