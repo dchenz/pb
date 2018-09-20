@@ -9,6 +9,11 @@
 #   $ source ~/.shell_rc
 # ------------------------------------------------
 
+# Helper for determining if this is MacOS
+_is_osx() {
+    uname | grep --quiet -i Darwin
+}
+
 # Upload input to {{ url('.post') }}
 #
 # usage: pb [-h|--help] [-c|--clip] [-e|--expires <date>] [-l|--label <label>] [<file>...]
@@ -19,6 +24,13 @@ pb() {
 
     # options
     local clip=0 expires quiet=0 private=0
+    local clip_cmd
+    if _is_osx; then
+        clip_cmd='pbcopy'
+    else
+        clip_cmd='xclip -sel clip'
+    fi
+    local clip_cmd_short=$(echo "$clip_cmd" | cut -d " " -f1)
 
     local i=1 plain arg opt
     while [ $i -le $# ]; do
@@ -75,20 +87,20 @@ pb() {
 
     local delim
     if [ "$clip" -eq 1 ]; then
-        if [ -z "$DISPLAY" ]; then
+        if [ -z "$DISPLAY" ] && ! _is_osx; then
             >&2 echo "pb: Can't copy url to clipboard -- DISPLAY is not defined. If you're using ssh, have you enabled X11 forwarding?"
             return 1
         fi
-        if ! command -v xclip >/dev/null; then
-            >&2 echo "pb: Can't copy url to clipboard -- xclip is not installed."
+        if ! command -v ${clip_cmd_short} >/dev/null; then
+            >&2 echo "pb: Can't copy url to clipboard -- ${clip_cmd_short} is not installed."
             return 1
         fi
 
         if [ "$quiet" -eq 1 ]; then
-            redir='2>/dev/null | tee /dev/stderr | xclip -sel clip'
+            redir="2>/dev/null | tee /dev/stderr | ${clip_cmd}"
             delim='\n'
         else
-            redir='| xclip -sel clip'
+            redir="| ${clip_cmd}"
         fi
     elif [ "$quiet" -eq 1 ]; then
         redir='>&2 2>/dev/null'
@@ -106,4 +118,21 @@ pb() {
         local input="${f:--}"
         eval "$curlcmd"
     done
+}
+
+# Use clipboard as input instead of pipe/file
+pbc() {
+    local clip_cmd
+    if _is_osx; then
+        clip_cmd='pbpaste -Prefer txt'
+    else
+        clip_cmd='xclip -o'
+    fi
+    local clip_cmd_short=$(echo "$clip_cmd" | cut -d " " -f1)
+
+    if ! command -v ${clip_cmd_short} >/dev/null; then
+        >&2 echo "pb: Can't paste from clipboard -- ${clip_cmd_short} is not installed."
+        return 1
+    fi
+    eval "${clip_cmd} | pb $@"
 }
