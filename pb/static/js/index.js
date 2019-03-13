@@ -197,7 +197,7 @@ var WWW = (function(undefined) {
         return fd;
     }
 
-    var status_keys = ['status', 'uuid', 'sunset', 'error'];
+    var status_keys = ['status', 'link', 'uuid', 'sunset', 'error'];
 
     function api_status(data) {
 
@@ -210,13 +210,13 @@ var WWW = (function(undefined) {
             var title,
                 value = data[key];
 
+            if (key == 'link')
+                alert.title(key, data.url, data.url);
+
             if (value === undefined)
                 return;
 
-            if (key == 'status')
-                alert.title(key, value, data.url);
-            else
-                alert.title(key, value);
+            alert.title(key, value);
         });
     }
 
