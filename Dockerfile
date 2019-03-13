@@ -6,11 +6,12 @@ ADD http://ftp.gnome.org/pub/GNOME/sources/ttf-bitstream-vera/1.10/ttf-bitstream
 
 RUN apk add --no-cache \
     asciidoctor \
-    libpng-dev \
-    libmagic \
+    dumb-init \
     fontconfig \
     git \
     graphicsmagick \
+    libmagic \
+    libpng-dev \
     nodejs \
     nodejs-npm \
     py3-pillow \
@@ -50,5 +51,5 @@ RUN rm -rf /root/vera.tar.bz2 node_modules
 
 EXPOSE 10002
 
-ENTRYPOINT  [ "/root/run.sh" ]
-CMD         [ "pb" ]
+ENTRYPOINT  [ "dumb-init" ]
+CMD         [ "/app/run.py" ]
