@@ -1,4 +1,4 @@
-FROM alpine:3.6
+FROM alpine:3.10
 
 MAINTAINER snaipe@arista.com
 
@@ -15,6 +15,7 @@ RUN apk add --no-cache \
     nodejs \
     nodejs-npm \
     py3-pillow \
+    py3-pip \
     python3
 
 RUN mkdir -p /usr/share/fonts
@@ -25,6 +26,7 @@ RUN pip3 install virtualenv
 RUN npm install -g grunt-cli
 
 COPY package.json /app/
+COPY package-lock.json /app/
 COPY Gruntfile.js /app/
 
 WORKDIR /app
