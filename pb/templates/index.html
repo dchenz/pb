@@ -19,7 +19,13 @@
       var api = API('{{ url('.post') }}');
       var app = WWW();
 
-      api.init_user();
+      api.init_user().done(function(data) {
+        $('#nav-links').append($('<a>', {
+          class: 'btn btn-default',
+          href: `/search?user=${encodeURIComponent(data.user)}`,
+          text: 'My Pastes',
+         }));
+      });
 
       function paste_submit(event) {
         var e = $(event.target),
@@ -177,6 +183,7 @@
         <div class="col-md-12">
           <div class="text-center">
             <h1 class="page-header"><a href="/" target="_blank">Arista Pastebin</a></h1>
+            <div id="nav-links"></div>
             <h3>tl;dr</h3>
             <div class="highlight">
               <pre><!--

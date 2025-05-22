@@ -15,7 +15,7 @@ from io import BytesIO
 
 from datetime import timedelta, datetime
 
-from flask import Blueprint, request, render_template, current_app, jsonify
+from flask import Blueprint, request, render_template, current_app, jsonify, make_response
 from jinja2 import Markup
 from pygments.formatters import HtmlFormatter, get_all_formatters
 from pygments.lexers import get_all_lexers
@@ -27,7 +27,7 @@ from pb.namespace import model as ns_model
 from pb.paste import model, handler as _handler
 from pb.util import highlight, request_content, request_keys, rst, markdown, absolute_url, get_host_name, parse_sunset, asciidoc
 from pb.cache import invalidate
-from pb.responses import BaseResponse, StatusResponse, PasteResponse, DictResponse, redirect
+from pb.responses import BaseResponse, StatusResponse, PasteResponse, DictResponse, redirect, any_url
 
 paste = Blueprint('paste', __name__)
 
@@ -46,6 +46,42 @@ def whoami():
     if header_name:
         user = request.headers.get(header_name)
     return jsonify({"user": user})
+
+def _parse_query_limit():
+    if not request.args.get("limit"):
+        return None
+    try:
+        return int(request.args["limit"])
+    except ValueError:
+        return None
+
+def _search_pastes():
+    query = {}
+    for key in request.args:
+        # Multiple values for a query param mean logical OR.
+        values = request.args.getlist(key)
+        if len(values) == 1:
+            query[key] = values[0]
+        else:
+            query[key] = {'$in': values}
+
+    limit = _parse_query_limit()
+    results = model.get_meta(**query)
+    if limit and limit > 0:
+        results = results.limit(limit)
+
+    pastes = [{**paste, "url": any_url(paste)} for paste in results]
+    return pastes
+
+@paste.route('/search')
+def search():
+    pastes = _search_pastes()
+
+    response = make_response(render_template("search.html", results=pastes))
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
 def _auth_namespace(namespace):
     uuid = request.headers.get('X-Namespace-Auth')
