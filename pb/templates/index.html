@@ -19,6 +19,8 @@
       var api = API('{{ url('.post') }}');
       var app = WWW();
 
+      api.init_user();
+
       function paste_submit(event) {
         var e = $(event.target),
         fd = app.paste_data(),
@@ -178,7 +180,7 @@
             <h3>tl;dr</h3>
             <div class="highlight">
               <pre><!--
-             --><span>$ alias pb='curl -F c=@- {{ url('.post') | nohttp }}'</span>
+             --><span>$ alias pb='curl -H "{{ http_user_header }}: $USER" -F c=@- {{ url('.post') | nohttp }}'</span>
 <!--         --><span>$ cmd | pb</span></pre><!--
          --></div>
             <p class="lead small">- or -</p>

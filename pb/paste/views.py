@@ -15,7 +15,7 @@ from io import BytesIO
 
 from datetime import timedelta, datetime
 
-from flask import Blueprint, request, render_template, current_app
+from flask import Blueprint, request, render_template, current_app, jsonify
 from jinja2 import Markup
 from pygments.formatters import HtmlFormatter, get_all_formatters
 from pygments.lexers import get_all_lexers
@@ -37,7 +37,15 @@ def _url(endpoint, **kwargs):
 
 @paste.route('/')
 def index():
-    return render_template("index.html")
+    return render_template("index.html", http_user_header=current_app.config.get('CREATE_PASTE_USER_HEADER'))
+
+@paste.route('/whoami')
+def whoami():
+    user = None
+    header_name = current_app.config.get('REMOTE_USER_HEADER')
+    if header_name:
+        user = request.headers.get(header_name)
+    return jsonify({"user": user})
 
 def _auth_namespace(namespace):
     uuid = request.headers.get('X-Namespace-Auth')
@@ -94,6 +102,10 @@ def post(label=None, namespace=None):
             label = label,
             namespace = host
         ))
+
+    user_header = current_app.config.get('CREATE_PASTE_USER_HEADER')
+    if user_header and request.headers.get(user_header):
+        args["user"] = request.headers[user_header]
 
     if not cur.count():
         try:

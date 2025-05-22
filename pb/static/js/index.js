@@ -1,10 +1,36 @@
 var API = (function(baseurl) {
 
+    var whoami = null;
+
+    function init_user() {
+        return $.ajax({
+            method: 'GET',
+            url: '/whoami',
+            args: {
+                dataType: 'text',
+                accepts: {
+                    text: "application/json",
+                }
+            }
+        }).done(function(data) {
+            whoami = data.user;
+        }).fail(function(xhr, status, error) {
+            console.error('Error making whoami request:', status, error);
+        });
+    }
+
     // method, args, uri
     function request(options) {
         options = options || {};
 
         var url = baseurl.concat(options.uri || '');
+
+        if (whoami) {
+            options.args = options.args || {};
+            options.args.headers = options.args.headers || {};
+            // The header name comes from current_app.config["CREATE_PASTE_USER_HEADER"].
+            options.args.headers["x-pb-user"] = whoami;
+        }
 
         args = $.extend({
             url: url,
@@ -94,6 +120,7 @@ var API = (function(baseurl) {
         url: {
             post: url_post
         },
+        init_user,
     }
 });
 
