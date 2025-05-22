@@ -15,7 +15,7 @@ from io import BytesIO
 
 from datetime import timedelta, datetime
 
-from flask import Blueprint, request, render_template, current_app
+from flask import Blueprint, request, render_template, current_app, jsonify, make_response
 from jinja2 import Markup
 from pygments.formatters import HtmlFormatter, get_all_formatters
 from pygments.lexers import get_all_lexers
@@ -27,7 +27,7 @@ from pb.namespace import model as ns_model
 from pb.paste import model, handler as _handler
 from pb.util import highlight, request_content, request_keys, rst, markdown, absolute_url, get_host_name, parse_sunset, asciidoc
 from pb.cache import invalidate
-from pb.responses import BaseResponse, StatusResponse, PasteResponse, DictResponse, redirect
+from pb.responses import BaseResponse, StatusResponse, PasteResponse, DictResponse, redirect, any_url
 
 paste = Blueprint('paste', __name__)
 
@@ -37,7 +37,79 @@ def _url(endpoint, **kwargs):
 
 @paste.route('/')
 def index():
-    return render_template("index.html")
+    http_user_header = current_app.config.get('CREATE_PASTE_USER_HEADER')
+    alias_whoami = current_app.config.get('ALIAS_WHOAMI')
+    return render_template("index.html", http_user_header=http_user_header, alias_whoami=alias_whoami)
+
+@paste.route('/whoami')
+def whoami():
+    user = None
+    header_name = current_app.config.get('REMOTE_USER_HEADER')
+    if header_name:
+        user = request.headers.get(header_name)
+    return jsonify({"user": user})
+
+def _parse_query_limit():
+    try:
+        return int(request.args["limit"])
+    except Exception:
+        return None
+
+def _search_pastes(limit):
+    query = {}
+    for key in request.args:
+        if key == "limit":
+            continue
+        # Multiple values for a query param mean logical OR.
+        values = request.args.getlist(key)
+        if len(values) == 1:
+            query[key] = values[0]
+        else:
+            query[key] = {'$in': values}
+
+    results = model.get_search_results(**query)
+    results = results.limit(limit)
+
+    pastes = [{**paste, "url": any_url(paste)} for paste in results]
+    return pastes
+
+@paste.route('/search')
+def search():
+    defaultSearchLimit = current_app.config.get("DEFAULT_SEARCH_LIMIT", 100)
+    maxSearchLimit = current_app.config.get("MAX_SEARCH_LIMIT")
+
+    limit = _parse_query_limit()
+    if not limit:
+        limit = defaultSearchLimit
+    else:
+        if limit <= 0:
+            return StatusResponse("limit must be greater than zero", 400)
+        if maxSearchLimit and limit > maxSearchLimit:
+            return StatusResponse(f"limit must be less than {maxSearchLimit}", 400)
+
+    pastes = _search_pastes(limit)
+
+    mimetype = request.accept_mimetypes.best_match([
+        "application/json",
+        "text/html",
+    ])
+
+    if mimetype == "application/json":
+        return jsonify({
+            "pastes": pastes,
+            "_links": {
+                "self": request.full_path,
+            },
+        })
+
+    if mimetype == "text/html":
+        response = make_response(render_template("search.html", results=pastes))
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
+
+    return "", 406
 
 def _auth_namespace(namespace):
     uuid = request.headers.get('X-Namespace-Auth')
@@ -94,6 +166,10 @@ def post(label=None, namespace=None):
             label = label,
             namespace = host
         ))
+
+    user_header = current_app.config.get('CREATE_PASTE_USER_HEADER')
+    if user_header and request.headers.get(user_header):
+        args["user"] = request.headers[user_header]
 
     if not cur.count():
         try:
