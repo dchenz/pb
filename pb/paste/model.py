@@ -95,3 +95,9 @@ def get_meta(**kwargs):
     return get_db().pastes.find(
         transform(kwargs)
     )
+
+def get_meta_without_content(**kwargs):
+    return get_db().pastes.find(
+        transform(kwargs),
+        {"content": 0},
+    )

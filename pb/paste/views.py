@@ -66,16 +66,18 @@ def _search_pastes():
             query[key] = {'$in': values}
 
     limit = _parse_query_limit()
-    results = model.get_meta(**query)
+    results = model.get_meta_without_content(**query)
     if limit and limit > 0:
         results = results.limit(limit)
 
     pastes = [{**paste, "url": any_url(paste)} for paste in results]
-    return pastes
+    return pastes, query
 
 @paste.route('/search')
 def search():
-    pastes = _search_pastes()
+    pastes, query = _search_pastes()
+    if request.accept_mimetypes.best == "application/json":
+        return jsonify({ "pastes": pastes, "query": query })
 
     response = make_response(render_template("search.html", results=pastes))
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
