@@ -35,6 +35,7 @@
         <th>Link</th>
         <th>User</th>
         <th>Mimetype</th>
+        <th class="text-right">Size</th>
       </tr>
     </thead>
     <tbody>
@@ -46,10 +47,26 @@
         </td>
         <td>{{ item.get('user', '') }}</td>
         <td>{{ item.get('mimetype', '') }}</td>
+        <td class="text-right">
+          {% set size = item.get('size', 0) %}
+          {% set KB = 1024 %}
+          {% set MB = KB**2 %}
+          {% set GB = KB**3 %}
+
+          {% if size >= GB %}
+          {{ (size / GB) | round(2) }} GB
+          {% elif size >= MB %}
+          {{ (size / MB) | round(2) }} MB
+          {% elif size >= KB %}
+          {{ (size / KB) | round(2) }} KB
+          {% else %}
+          {{ size }} B
+          {% endif %}
+        </td>
       </tr>
       {% endfor %} {% else %}
       <tr>
-        <td colspan="4" class="text-center text-muted">No results found.</td>
+        <td colspan="5" class="text-center text-muted">No results found.</td>
       </tr>
       {% endif %}
     </tbody>
