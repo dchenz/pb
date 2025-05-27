@@ -37,7 +37,9 @@ def _url(endpoint, **kwargs):
 
 @paste.route('/')
 def index():
-    return render_template("index.html", http_user_header=current_app.config.get('CREATE_PASTE_USER_HEADER'))
+    http_user_header = current_app.config.get('CREATE_PASTE_USER_HEADER')
+    alias_whoami = current_app.config.get('ALIAS_WHOAMI')
+    return render_template("index.html", http_user_header=http_user_header, alias_whoami=alias_whoami)
 
 @paste.route('/whoami')
 def whoami():
