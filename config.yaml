@@ -6,6 +6,15 @@ MONGO:
 
 MONGO_DATABASE: pb
 
+# The value of this HTTP header will be attached as "user" for new pastes.
+CREATE_PASTE_USER_HEADER: x-pb-user
+
+# The value of this HTTP header will be echo'd by GET /whoami.
+REMOTE_USER_HEADER: remote-user
+
+# Added to the pb alias to determine the user.
+ALIAS_WHOAMI: $USER
+
 #VARNISH_BASE: 'http://[::1]:8080/'
 
 #CDN_PREFIX: '//d34zelngniy2d8.cloudfront.net'
