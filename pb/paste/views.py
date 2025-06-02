@@ -12,6 +12,7 @@
 from uuid import UUID
 from mimetypes import guess_type
 from io import BytesIO
+from urllib.parse import urlencode
 
 from datetime import timedelta, datetime
 
@@ -21,7 +22,7 @@ from pygments.formatters import HtmlFormatter, get_all_formatters
 from pygments.lexers import get_all_lexers
 from pygments.styles import get_all_styles
 from pygments.util import ClassNotFound
-from pymongo import errors
+from pymongo import errors, DESCENDING
 
 from pb.namespace import model as ns_model
 from pb.paste import model, handler as _handler
@@ -55,23 +56,42 @@ def _parse_query_limit():
     except Exception:
         return None
 
+def _parse_query_cursor():
+    try:
+        value = int(request.args["cursor"])
+        return datetime.fromtimestamp(value // 1000)
+    except Exception:
+        return None
+
 def _search_pastes(limit):
     query = {}
     for key in request.args:
-        if key == "limit":
+        if key in ("cursor", "date", "limit"):
             continue
         # Multiple values for a query param mean logical OR.
         values = request.args.getlist(key)
         if len(values) == 1:
             query[key] = values[0]
         else:
-            query[key] = {'$in': values}
+            query[key] = {"$in": values}
+
+    cursor = _parse_query_cursor()
+    if cursor:
+        query["date"] = {"$lt": cursor}
 
     results = model.get_search_results(**query)
-    results = results.limit(limit)
+    # Query 1 extra paste so we can tell if there are more pages.
+    results = results.limit(limit + 1)
+    results = results.sort("date", DESCENDING)
 
     pastes = [{**paste, "url": any_url(paste)} for paste in results]
-    return pastes
+
+    nextCursor = None
+    if pastes and len(pastes) > limit:
+        pastes.pop()
+        nextCursor = int(pastes[-1]["date"].timestamp() * 1000)
+
+    return pastes, nextCursor
 
 @paste.route('/search')
 def search():
@@ -87,7 +107,13 @@ def search():
         if maxSearchLimit and limit > maxSearchLimit:
             return StatusResponse(f"limit must be less than {maxSearchLimit}", 400)
 
-    pastes = _search_pastes(limit)
+    pastes, nextCursor = _search_pastes(limit)
+
+    nextUrl = None
+    if nextCursor:
+        params = request.args.copy()
+        params["cursor"] = str(nextCursor)
+        nextUrl = f"{request.path}?{urlencode(params)}"
 
     mimetype = request.accept_mimetypes.best_match([
         "application/json",
@@ -99,11 +125,12 @@ def search():
             "pastes": pastes,
             "_links": {
                 "self": request.full_path,
+                "next": nextUrl,
             },
         })
 
     if mimetype == "text/html":
-        response = make_response(render_template("search.html", results=pastes))
+        response = make_response(render_template("search.html", results=pastes, nextUrl=nextUrl))
         response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"
