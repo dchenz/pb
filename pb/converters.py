@@ -14,7 +14,7 @@ from os import path
 from binascii import unhexlify, hexlify, Error as BinError
 from base64 import urlsafe_b64encode, urlsafe_b64decode
 
-from werkzeug.routing import BaseConverter
+from werkzeug.routing import BaseConverter, ValidationError
 
 class UnhexMixin:
     def to_url(self, value, length=None):
@@ -42,6 +42,16 @@ class SIDConverter(UnhexMixin, BaseConverter):
         if length % 4 != 0:
             raise NotImplementedError('{} % 4 != 0; kthx'.format(length))
         self.length = 6 * (length // 4)
+
+    def to_url(self, value, length=None):
+        # url_for() does not validate the length parameter when finding a route on an
+        # endpoint with multiple routes. Werkzeug will only skip the route if the
+        # converter raises a ValidationError. This avoids a length=8 converter being
+        # used on a paste with short hash length 6 and producing an invalid URL.
+        sid = value if isinstance(value, str) else value[0]
+        if len(sid) != self.length:
+            raise ValidationError(f"expected {self.length} for {value}")
+        return super().to_url(value, length)
 
     def to_python(self, value):
         name, sid = self.sre.match(value).groups()
