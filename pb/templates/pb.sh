@@ -111,6 +111,10 @@ pb() {
         curlopts="${curlopts} -F p=1"
     fi
 
+    {% if alias_whoami %}
+    curlopts="${curlopts} -F \"t={{ alias_whoami }}\""
+    {% endif %}
+
     curlcmd='curl -sS '"${curlopts}"' -F "c=@${input}" -w "%{redirect_url}'"$delim"'" "'"$pb_base$post_path"'?r=1" -o /dev/stderr '"$redir"
 
     local f
