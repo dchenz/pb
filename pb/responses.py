@@ -25,7 +25,7 @@ def any_url(paste, filename=None):
         return idu('sha1', 'digest')
     if paste.get('label'):
         return idu('label', 'label')
-    return idu('sid', 'digest')
+    return idu('sid', 'short')
 
 def redirect(location, rv, code=302, **kwargs):
     response = current_app.response_class(rv, code, **kwargs)
