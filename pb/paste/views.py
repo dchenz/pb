@@ -16,7 +16,7 @@ from urllib.parse import urlencode
 
 from datetime import timedelta, datetime
 
-from flask import Blueprint, request, render_template, current_app, jsonify, make_response
+from flask import Blueprint, request, render_template, current_app, jsonify
 from pygments.formatters import HtmlFormatter, get_all_formatters
 from pygments.lexers import get_all_lexers
 from pygments.styles import get_all_styles
@@ -139,11 +139,7 @@ def search():
         })
 
     if mimetype == "text/html":
-        response = make_response(render_template("search.html", results=pastes, nextUrl=nextUrl))
-        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-        response.headers["Pragma"] = "no-cache"
-        response.headers["Expires"] = "0"
-        return response
+        return render_template("search.html", results=pastes, nextUrl=nextUrl)
 
     return "", 406
 

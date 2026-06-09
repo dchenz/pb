@@ -63,7 +63,9 @@ def invalidate(**kwargs):
     return paste
 
 def add_cache_header(response):
-    if request.method == 'GET' and not response.cache_control.public:
+    if request.path.startswith('/search'):
+        response.cache_control.no_cache = True
+    elif request.method == 'GET' and not response.cache_control.public:
         prefix = request.blueprint if request.blueprint else current_app.name
         # ugh
         etag = "{}-{}".format(prefix, sha1(response.data).hexdigest())
