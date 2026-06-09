@@ -96,6 +96,9 @@ def get_meta(**kwargs):
         transform(kwargs)
     )
 
+def get_distinct(field):
+    return get_db().pastes.distinct(field)
+
 def get_search_results(**kwargs):
     return get_db().pastes.find(
         transform(kwargs),

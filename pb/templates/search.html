@@ -10,6 +10,29 @@
     margin-top: 16px;
     margin-bottom: 24px;
   }
+  .autocomplete-list {
+    position: absolute;
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 0 0 4px 4px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+  .autocomplete-list li {
+    padding: 6px 10px;
+    cursor: pointer;
+    overflow-wrap: break-word;
+    word-break: break-all;
+  }
+  .autocomplete-list li:hover,
+  .autocomplete-list li.active {
+    background: #eee;
+  }
 </style>
 {% endblock %} {% block body_nowrap %}
 <div class="container">
@@ -18,11 +41,12 @@
     <form id="searchForm" class="form-inline" onsubmit="updateQueryString(event)">
       <div class="form-group">
         <label for="tag">Tag:</label>
-        <input type="text" class="form-control" id="tag" name="tag" value="{{ request.args.get('tag', '') }}">
+        <input type="text" class="form-control" id="tag" name="tag" autocomplete="off"
+          value="{{ request.args.get('tag', '') }}">
       </div>
       <div class="form-group">
         <label for="mimetype">Mimetype:</label>
-        <input type="text" class="form-control" id="mimetype" name="mimetype"
+        <input type="text" class="form-control" id="mimetype" name="mimetype" autocomplete="off"
           value="{{ request.args.get('mimetype', '') }}">
       </div>
       <button type="submit" class="btn btn-primary">Search</button>
@@ -76,6 +100,123 @@
   </table>
 </div>
 <script>
+  // Subsequence match: "txpy" matches "text/x-python"
+  function fuzzyFilter(query, candidate) {
+    var q = query.toLowerCase();
+    var c = candidate.toLowerCase();
+    var qi = 0;
+    for (var ci = 0; ci < c.length && qi < q.length; ci++) {
+      if (c[ci] === q[qi]) {
+        qi++;
+      }
+    }
+    return qi === q.length;
+  }
+
+  var distinctCache = {};
+  // Maps input element IDs to /search/distinct/<field> values
+  var fieldMap = { tag: 'tags', mimetype: 'mimetypes' };
+
+  function fetchDistinct(field, cb) {
+    if (distinctCache[field]) {
+      return cb(distinctCache[field]);
+    }
+    $.getJSON('/search/distinct/' + field, function(data) {
+      distinctCache[field] = data;
+      cb(data);
+    });
+  }
+
+  function showSuggestions(input, listEl, items) {
+    var query = input.value.trim();
+    var matches = items.filter(function(item) {
+      return !query || fuzzyFilter(query, item);
+    });
+    if (query) {
+      matches.sort(function(a, b) { return a.length - b.length; });
+    }
+    listEl.innerHTML = '';
+    if (!matches.length) {
+      listEl.style.display = 'none';
+      return;
+    }
+
+    matches.forEach(function(item) {
+      var li = document.createElement('li');
+      li.textContent = item;
+      // mousedown fires before blur, so the click registers
+      li.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        input.value = item;
+        listEl.style.display = 'none';
+      });
+      listEl.appendChild(li);
+    });
+    var rect = input.getBoundingClientRect();
+    listEl.style.top = (rect.bottom + window.scrollY) + 'px';
+    listEl.style.left = (rect.left + window.scrollX) + 'px';
+    listEl.style.width = rect.width + 'px';
+    listEl.style.display = 'block';
+  }
+
+  ['tag', 'mimetype'].forEach(function(id) {
+    var input = document.getElementById(id);
+    var key = fieldMap[id];
+    var listEl = document.createElement('ul');
+    listEl.className = 'autocomplete-list';
+    listEl.style.display = 'none';
+    document.body.appendChild(listEl);
+
+    var activeIdx = -1;
+
+    function updateActive() {
+      var items = listEl.querySelectorAll('li');
+      items.forEach(function(li, i) {
+        li.classList.toggle('active', i === activeIdx);
+      });
+    }
+
+    input.addEventListener('focus', function() {
+      fetchDistinct(key, function(data) {
+        activeIdx = -1;
+        showSuggestions(input, listEl, data);
+      });
+    });
+    input.addEventListener('input', function() {
+      fetchDistinct(key, function(data) {
+        activeIdx = -1;
+        showSuggestions(input, listEl, data);
+      });
+    });
+    input.addEventListener('blur', function() {
+      listEl.style.display = 'none';
+      activeIdx = -1;
+    });
+    input.addEventListener('keydown', function(e) {
+      var items = listEl.querySelectorAll('li');
+      if (!items.length || listEl.style.display === 'none') {
+        return;
+      }
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        activeIdx = Math.min(activeIdx + 1, items.length - 1);
+        updateActive();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        activeIdx = Math.max(activeIdx - 1, 0);
+        updateActive();
+      } else if (e.key === 'Enter' && activeIdx >= 0) {
+        e.preventDefault();
+        input.value = items[activeIdx].textContent;
+        listEl.style.display = 'none';
+        activeIdx = -1;
+      } else if (e.key === 'Escape') {
+        listEl.style.display = 'none';
+        activeIdx = -1;
+      }
+    });
+  });
+
   function updateQueryString(event) {
     event.preventDefault();
     var params = new URLSearchParams();

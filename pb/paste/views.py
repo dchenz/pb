@@ -102,6 +102,20 @@ def _search_pastes(limit):
 
     return pastes, nextCursor
 
+@paste.route('/search/distinct/<field>')
+def distinct(field):
+    # URL field name -> MongoDB field name
+    valid_distinct_fields = {
+        'tags': 'tags',
+        'mimetypes': 'mimetype',
+    }
+
+    db_field = valid_distinct_fields.get(field)
+    if not db_field:
+        return StatusResponse("invalid field", 400)
+    values = [v for v in model.get_distinct(db_field) if v]
+    return jsonify(sorted(values))
+
 @paste.route('/search')
 def search():
     defaultSearchLimit = current_app.config.get("DEFAULT_SEARCH_LIMIT", 100)
