@@ -77,6 +77,10 @@ var API = (function(baseurl) {
     }
 
     function post(data, uri) {
+        var label = $('#label').val();
+        if (label) {
+            uri = '~' + encodeURIComponent(label);
+        }
         return request({
             method: 'POST',
             uri: uri,
