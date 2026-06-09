@@ -49,6 +49,11 @@
         <input type="text" class="form-control" id="mimetype" name="mimetype" autocomplete="off"
           value="{{ request.args.get('mimetype', '') }}">
       </div>
+      <div class="form-group">
+        <label for="label">Label:</label>
+        <input type="text" class="form-control" id="label" name="label" autocomplete="off"
+          value="{{ request.args.get('label', '') }}">
+      </div>
       <button type="submit" class="btn btn-primary">Search</button>
     </form>
     {% if nextUrl %}
@@ -115,7 +120,7 @@
 
   var distinctCache = {};
   // Maps input element IDs to /search/distinct/<field> values
-  var fieldMap = { tag: 'tags', mimetype: 'mimetypes' };
+  var fieldMap = { tag: 'tags', mimetype: 'mimetypes', label: 'labels' };
 
   function fetchDistinct(field, cb) {
     if (distinctCache[field]) {
@@ -159,7 +164,7 @@
     listEl.style.display = 'block';
   }
 
-  ['tag', 'mimetype'].forEach(function(id) {
+  ['tag', 'mimetype', 'label'].forEach(function(id) {
     var input = document.getElementById(id);
     var key = fieldMap[id];
     var listEl = document.createElement('ul');
@@ -222,12 +227,16 @@
     var params = new URLSearchParams();
     var tag = document.getElementById('tag').value.trim();
     var mimetype = document.getElementById('mimetype').value.trim();
+    var label = document.getElementById('label').value.trim();
 
     if (tag) {
       params.set('tag', tag);
     }
     if (mimetype) {
       params.set('mimetype', mimetype);
+    }
+    if (label) {
+      params.set('label', label);
     }
     // This will reload the page.
     window.location.search = params.toString();

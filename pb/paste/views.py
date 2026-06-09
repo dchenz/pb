@@ -108,6 +108,7 @@ def distinct(field):
     valid_distinct_fields = {
         'tags': 'tags',
         'mimetypes': 'mimetype',
+        'labels': 'label',
     }
 
     db_field = valid_distinct_fields.get(field)
