@@ -65,6 +65,7 @@
       <tr>
         <th>Time (UTC)</th>
         <th>Link</th>
+        <th>Label</th>
         <th>Tags</th>
         <th>Mimetype</th>
         <th class="text-right">Size</th>
@@ -77,6 +78,7 @@
         <td>
           <a href="{{ item.url }}" target="_blank" rel="noopener">{{ item.url }}</a>
         </td>
+        <td>{{ item.get('label', '') }}</td>
         <td>{{ item.get('tags', []) | join(', ') }}</td>
         <td>{{ item.get('mimetype', '') }}</td>
         <td class="text-right">
@@ -98,7 +100,7 @@
       </tr>
       {% endfor %} {% else %}
       <tr>
-        <td colspan="5" class="text-center text-muted">No results found.</td>
+        <td colspan="6" class="text-center text-muted">No results found.</td>
       </tr>
       {% endif %}
     </tbody>
