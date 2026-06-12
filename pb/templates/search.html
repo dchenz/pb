@@ -33,6 +33,30 @@
   .autocomplete-list li.active {
     background: #eee;
   }
+  @media (min-width: 1400px) {
+    .container { width: 1370px; }
+  }
+  .search-results {
+    table-layout: fixed;
+    width: 100%;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  .col-time {
+    width: 15%;
+  }
+  .col-link {
+    width: 25%;
+  }
+  .col-label {
+    width: 15%;
+  }
+  .col-mimetype {
+    width: 15%;
+  }
+  .col-size {
+    width: 10%;
+  }
 </style>
 {% endblock %} {% block body_nowrap %}
 <div class="container">
@@ -60,28 +84,28 @@
     <button id="next-page" class="btn" onclick="goToNextPage(event)">Next Page</button>
     {% endif %}
   </div>
-  <table class="table table-striped table-bordered table-hover">
+  <table class="table table-striped table-bordered table-hover search-results">
     <thead class="table-dark">
       <tr>
-        <th>Time (UTC)</th>
-        <th>Link</th>
-        <th>Label</th>
+        <th class="col-time">Time (UTC)</th>
+        <th class="col-link">Link</th>
+        <th class="col-label">Label</th>
+        <th class="col-mimetype">Mimetype</th>
         <th>Tags</th>
-        <th>Mimetype</th>
-        <th class="text-right">Size</th>
+        <th class="col-size text-right">Size</th>
       </tr>
     </thead>
     <tbody>
       {% if results %} {% for item in results %}
       <tr>
-        <td>{{ item.date.strftime('%b %d, %Y %I:%M %p') }}</td>
-        <td>
+        <td class="col-time">{{ item.date.strftime('%b %d, %Y %I:%M %p') }}</td>
+        <td class="col-link">
           <a href="{{ item.url }}" target="_blank" rel="noopener">{{ item.url }}</a>
         </td>
-        <td>{{ item.get('label', '') }}</td>
+        <td class="col-label">{{ item.get('label', '') }}</td>
+        <td class="col-mimetype">{{ item.get('mimetype', '') }}</td>
         <td>{{ item.get('tags', []) | join(', ') }}</td>
-        <td>{{ item.get('mimetype', '') }}</td>
-        <td class="text-right">
+        <td class="col-size text-right">
           {% set size = item.get('size', 0) %}
           {% set KB = 1024 %}
           {% set MB = KB**2 %}
