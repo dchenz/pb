@@ -201,8 +201,9 @@ def post(label=None, namespace=None):
 
     if label:
         label, _ = label
-        if len(label) == 1:
-            return StatusResponse("invalid label", 400)
+        max_label_length = current_app.config.get("MAX_LABEL_LENGTH", 128)
+        if len(label) < 2 or len(label) > max_label_length:
+            return StatusResponse(f"label must be between 2 and {max_label_length} characters", 400)
         args['label'] = label
     if namespace:
         host = get_host_name(request)

@@ -18,6 +18,9 @@ DEFAULT_SEARCH_LIMIT: 100
 # Maximum limit allowed in one search request.
 MAX_SEARCH_LIMIT: 500
 
+# Maximum character length for paste labels.
+MAX_LABEL_LENGTH: 128
+
 #VARNISH_BASE: 'http://[::1]:8080/'
 
 #CDN_PREFIX: '//d34zelngniy2d8.cloudfront.net'
